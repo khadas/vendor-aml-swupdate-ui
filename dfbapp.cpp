@@ -116,32 +116,15 @@ DFBApp::Init( int argc, char *argv[] )
 void
 DFBApp::Run()
 {
-     while (true) {
-          static bool flag = true;
-          /* render to the screen */
-          if (flag) {
-              Render( m_primary );
-              flag = false;
-          }
+     /* render to the screen */
+     Render( m_primary );
 
+     while (true) {
           /* flip the screen */
           if (m_flipping)
                m_primary.Flip();
 
-          if (m_fd > 0 ) {
-              while (read(m_fd, &m_msg, sizeof(m_msg)) > 0 )
-                  HandleEvent( m_primary );
-          }
-
-          //         return ;
-          /* wait for an event if Update() returns true */
-          //if (Update())
-          //     m_events.WaitForEvent();
-
-          /* handle all events, exit if HandleEvent() returns true */
-          //while (m_events.GetEvent( DFB_EVENT(&event) ))
-          //     if (HandleEvent( event ))
-          //          return;
+          HandleEvent( m_primary );
      }
 }
 
@@ -187,4 +170,3 @@ DFBApp::HandleEvent( IDirectFBSurface &surface )
 {
      return true;
 }
-

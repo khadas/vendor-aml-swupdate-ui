@@ -76,7 +76,5 @@ protected:
      IDirectFB            m_dfb;
      IDirectFBSurface     m_primary;
      IDirectFBEventBuffer m_events;
-     int                  m_fd;
-     unsigned int         m_msg;
 };
 
