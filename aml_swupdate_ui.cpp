@@ -1,37 +1,21 @@
 /*
-   (c) Copyright 2012-2013  DirectFB integrated media GmbH
-   (c) Copyright 2001-2013  The world wide DirectFB Open Source Community (directfb.org)
-   (c) Copyright 2000-2004  Convergence (integrated media) GmbH
-
-   All rights reserved.
-
-   Written by Denis Oliver Kropp <dok@directfb.org>,
-              Andreas Shimokawa <andi@directfb.org>,
-              Marek Pikarski <mass@directfb.org>,
-              Sven Neumann <neo@directfb.org>,
-              Ville Syrjälä <syrjala@sci.fi> and
-              Claudio Ciccani <klan@users.sf.net>.
-
-   This file is subject to the terms and conditions of the MIT License:
-
-   Permission is hereby granted, free of charge, to any person
-   obtaining a copy of this software and associated documentation
-   files (the "Software"), to deal in the Software without restriction,
-   including without limitation the rights to use, copy, modify, merge,
-   publish, distribute, sublicense, and/or sell copies of the Software,
-   and to permit persons to whom the Software is furnished to do so,
-   subject to the following conditions:
-
-   The above copyright notice and this permission notice shall be
-   included in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright (C) 2017 Amlogic Corporation.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSEERROR_CODE_INVALID_OPERATION.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ *  DESCRIPTION
+ *      This file implements a adaptor of audio decoder from Amlogic.
+ *
 */
 
 
@@ -58,24 +42,24 @@
 #define SWUPDATE_PROGRESS_PATH  "/tmp/swupdateprog"
 #define PIXEL_PER_PERCENT       6
 
-/* font position */
-#define FONT_X                  58
-#define FONT_Y                  630
+/* text start position */
+#define TEXT_START_X                  58
+#define TEXT_START_Y                  630
 
-/* background rectangle start position */
-#define BG_RTG_X                FONT_X
-#define BG_RTG_Y                650
+/* progress bar background rectangle start position */
+#define PROGRESS_BAR_BG_RECT_X        TEXT_START_X
+#define PROGRESS_BAR_BG_RECT_Y        650
 
-/* background rectangle length & width */
-#define BG_RTG_LEN              604
-#define BG_RTG_WID              12
+/* progress bar background rectangle length & width */
+#define PROGRESS_BAR_BG_RECT_LEN      604
+#define PROGRESS_BAR_BG_RECT_WID      12
 
-/* progress rectangle start position */
-#define PROG_RTG_X              60
-#define PROG_RTG_Y              652
+/* progress bar front rectangle start position */
+#define PROGRESS_BAR_FRONT_RECT_X     (PROGRESS_BAR_BG_RECT_X + 2)
+#define PROGRESS_BAR_FRONT_RECT_Y     (PROGRESS_BAR_BG_RECT_Y + 2)
 
-/* progress rectangle width */
-#define PROG_RTG_WID            8
+/* progress bar front rectangle width */
+#define PROGRESS_BAR_FRONT_RECT_WID   (PROGRESS_BAR_BG_RECT_WID - 4)
 
 static struct sockaddr_un address;
 
@@ -134,11 +118,11 @@ private:
           surface.SetColor(0x80, 0x80, 0xff, 0xff);
           surface.SetSrcBlendFunction( DSBF_INVSRCALPHA );
           surface.SetDstBlendFunction( DSBF_INVSRCALPHA );
-          surface.DrawString ("Recovering", -1, FONT_X, FONT_Y, DSTF_NONE);
+          surface.DrawString ("Recovering", -1, TEXT_START_X, TEXT_START_Y, DSTF_NONE);
 
           /* draw background rectangle */
           surface.SetColor(0xEE, 0xEE, 0xEE, 0xFF);
-          surface.FillRectangle(BG_RTG_X, BG_RTG_Y, BG_RTG_LEN, BG_RTG_WID);
+          surface.FillRectangle(PROGRESS_BAR_BG_RECT_X, PROGRESS_BAR_BG_RECT_Y, PROGRESS_BAR_BG_RECT_LEN, PROGRESS_BAR_BG_RECT_WID);
     }
 
     bool ParseArgs( int argc, char *argv[] ) {
@@ -177,7 +161,7 @@ private:
 
           if ((0 < cur_percent) && (100 >= cur_percent)) {
                surface.SetColor(0xEE, 0x96, 0x11, 0xFF);
-               surface.FillRectangle(PROG_RTG_X, PROG_RTG_Y, cur_percent * PIXEL_PER_PERCENT, PROG_RTG_WID);
+               surface.FillRectangle(PROGRESS_BAR_FRONT_RECT_X, PROGRESS_BAR_FRONT_RECT_Y, cur_percent * PIXEL_PER_PERCENT, PROGRESS_BAR_FRONT_RECT_WID);
 
           } else {
                std::cerr << "Error progress: " << cur_percent << std::endl;
