@@ -40,28 +40,33 @@
 
 #define FONT                    "/usr/share/directfb-1.7.7/decker.ttf"
 #define SWUPDATE_PROGRESS_PATH  "/tmp/swupdateprog"
-#define PIXEL_PER_PERCENT       6
+/* fixed the front rectangle length by pixel_per_percent */
+int pixel_per_percent = 4;
 
-/* text start position */
-#define TEXT_START_X                  58
-#define TEXT_START_Y                  630
+/* text start position variate */
+int text_start_x = 0; 
+int text_start_y = 0; 
 
-/* progress bar background rectangle start position */
-#define PROGRESS_BAR_BG_RECT_X        TEXT_START_X
-#define PROGRESS_BAR_BG_RECT_Y        650
+/* progress bar background rectangle start position variate */
+int progress_bar_bg_rect_x = 0;
+int progress_bar_bg_rect_y = 0; 
 
-/* progress bar background rectangle length & width */
-#define PROGRESS_BAR_BG_RECT_LEN      604
+/* progress bar background rectangle length & width variate */
+int progress_bar_bg_rect_len = 0; 
+
+/* progress bar front rectangle start position variate */
+int progress_bar_front_rect_x = 0; 
+int progress_bar_front_rect_y = 0; 
+
+/* progress bar background rectangle width */
 #define PROGRESS_BAR_BG_RECT_WID      12
-
-/* progress bar front rectangle start position */
-#define PROGRESS_BAR_FRONT_RECT_X     (PROGRESS_BAR_BG_RECT_X + 2)
-#define PROGRESS_BAR_FRONT_RECT_Y     (PROGRESS_BAR_BG_RECT_Y + 2)
 
 /* progress bar front rectangle width */
 #define PROGRESS_BAR_FRONT_RECT_WID   (PROGRESS_BAR_BG_RECT_WID - 4)
 
 static struct sockaddr_un address;
+int screen_width = 0;
+int screen_height = 0;
 
 class DFBSwupdateUI : public DFBApp {
 public:
@@ -104,25 +109,63 @@ private:
 
     /* render callback */
     virtual void Render( IDirectFBSurface &surface ) {
+          int image_width = 0;
+          int image_height = 0;
           /* clear screen */
           surface.Clear();
 
           m_image.PrepareTarget( surface );
 
+          screen_width = (int) surface.GetWidth();
+          screen_height = (int) surface.GetHeight();
+          image_width = (int) m_image.GetWidth();
+          image_height = (int) m_image.GetHeight();
+          
           /* centered the image */
-          int x = ((int) surface.GetWidth()  - (int) m_image.GetWidth())  / 2;
-          int y = ((int) surface.GetHeight() - (int) m_image.GetHeight()) / 2;
+          //int x = (screen_width - image_width)  / 2;
+          //int y = (screen_height - image_height) / 2;
+          /* The image is displayed in the upper left corner */
+          int x = 0, y = 0;
           surface.Blit( m_image, NULL, x, y );
 
+          /* 
+           |                                                                   |
+           |Recovering                                                         |
+           |***********************background*******************************   |
+           |*   2                                                       2  *   |
+           |* 2|----------------------front-----------------------------|2 *   |
+           |*  |--------------------------------------------------------|  *   |
+           |*   2                                                       2  *   |
+           |****************************************************************   |
+           |                                                                   |
+           |________________________baseline___________________________________|
+           The front rectangle's length should be a multiple of 100 because the
+           progress percent is 100, so we can express percentages as integer
+           pixels. The background rectangle's start position and length can
+           calculated, because the background rectangle is 4 pixels longer than the front rectangle.
+           */
+          /* adjust the start position of the text, the height is 50 pixels from the baseline */
+          text_start_x = 0;
+          text_start_y = screen_height - 50;
           surface.SetFont( font );
           surface.SetColor(0x80, 0x80, 0xff, 0xff);
           surface.SetSrcBlendFunction( DSBF_INVSRCALPHA );
           surface.SetDstBlendFunction( DSBF_INVSRCALPHA );
-          surface.DrawString ("Recovering", -1, TEXT_START_X, TEXT_START_Y, DSTF_NONE);
+          surface.DrawString ("Recovering", -1, text_start_x, text_start_y, DSTF_NONE);
 
+          /* adjust the position of the progress bar here, the height is offseted 20 pixels down */
+          progress_bar_bg_rect_x = text_start_x;
+          progress_bar_bg_rect_y = text_start_y + 20;
+
+          /* The background rectangle is 4 pixels longer than the front rectangle, (pixel_per_percent * 100) is the length
+             of front rectangle. 
+           */
+          progress_bar_bg_rect_len = (pixel_per_percent * 100) + 4;
+          progress_bar_front_rect_x = progress_bar_bg_rect_x + 2;
+          progress_bar_front_rect_y = progress_bar_bg_rect_y + 2;
           /* draw background rectangle */
           surface.SetColor(0xEE, 0xEE, 0xEE, 0xFF);
-          surface.FillRectangle(PROGRESS_BAR_BG_RECT_X, PROGRESS_BAR_BG_RECT_Y, PROGRESS_BAR_BG_RECT_LEN, PROGRESS_BAR_BG_RECT_WID);
+          surface.FillRectangle(progress_bar_bg_rect_x, progress_bar_bg_rect_y, progress_bar_bg_rect_len, PROGRESS_BAR_BG_RECT_WID);
     }
 
     bool ParseArgs( int argc, char *argv[] ) {
@@ -161,7 +204,7 @@ private:
 
           if ((0 < cur_percent) && (100 >= cur_percent)) {
                surface.SetColor(0xEE, 0x96, 0x11, 0xFF);
-               surface.FillRectangle(PROGRESS_BAR_FRONT_RECT_X, PROGRESS_BAR_FRONT_RECT_Y, cur_percent * PIXEL_PER_PERCENT, PROGRESS_BAR_FRONT_RECT_WID);
+               surface.FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * pixel_per_percent, PROGRESS_BAR_FRONT_RECT_WID);
 
           } else {
                std::cerr << "Error progress: " << cur_percent << std::endl;
