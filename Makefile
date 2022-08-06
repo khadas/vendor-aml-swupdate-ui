@@ -1,17 +1,37 @@
-.PHONYH: all install clean
-
-OBJ=aml_swupdate_ui.o dfbapp.o dfbimage.o
-
-CFLAGS += $(shell $(PKG_CONFIG) --cflags directfb)
-LDFLAGS += $(shell $(PKG_CONFIG) --libs directfb) -l++dfb
+.PHONYH: clean
 
 all: swupdateui
 
-swupdateui: $(OBJ)
-	$(CXX) $^ $(LDFLAGS) -o $@
+ifeq ($(CONFIG_LVGL_APP), y)
+LDFLAGS += -llvgl -llv_drivers
+swupdateui: main.o lvgl_ui/liblvgl_ui.a lvgl_porting/liblvgl_porting.a common/libcommon.a
+	$(CXX) $^ -lpthread -o $@ $(LDFLAGS)
 
-$(OBJ):%.o:%.cpp
-	$(CXX) -c $(CFLAGS) -g $^ -o $@
+lvgl_ui/liblvgl_ui.a:
+	$(MAKE) -C lvgl_ui
+
+lvgl_porting/liblvgl_porting.a:
+	$(MAKE) -C lvgl_porting
+
+else
+LDFLAGS += $(shell $(PKG_CONFIG) --libs directfb) -l++dfb
+swupdateui: main.o directfb_ui/libdirectfb_ui.a common/libcommon.a
+	$(CXX) $^ -o $@ $(LDFLAGS)
+
+directfb_ui/libdirectfb_ui.a:
+	$(MAKE) -C directfb_ui
+
+endif
+
+common/libcommon.a:
+	$(MAKE) -C common
+
+main.o: main.cpp
+	$(CXX) $(CFLAGS) -O3 $(LDFLAGS) -c $< -o $@
 
 clean:
 	rm -f *.o swupdateui
+	$(MAKE) -C common clean
+	$(MAKE) -C lvgl_ui clean
+	$(MAKE) -C lvgl_porting clean
+	$(MAKE) -C directfb_ui clean

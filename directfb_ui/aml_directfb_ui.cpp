@@ -28,35 +28,35 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
 #include <string.h>
 #include <unistd.h>
 #include <progress_ipc.h>
 #include <sys/un.h>
 #include <errno.h>
-
 #include "dfbapp.h"
 #include "dfbimage.h"
+#include "../common/aml_ui_run.h"
+#include "../common/swupdate_ipc.h"
 
-#define FONT                    "/usr/share/directfb-1.7.7/decker.ttf"
-#define SWUPDATE_PROGRESS_PATH  "/tmp/swupdateprog"
+#define FONT  "/usr/share/directfb-1.7.7/decker.ttf"
+
 /* fixed the front rectangle length by pixel_per_percent */
 int pixel_per_percent = 4;
 
 /* text start position variate */
-int text_start_x = 0; 
-int text_start_y = 0; 
+int text_start_x = 0;
+int text_start_y = 0;
 
 /* progress bar background rectangle start position variate */
 int progress_bar_bg_rect_x = 0;
-int progress_bar_bg_rect_y = 0; 
+int progress_bar_bg_rect_y = 0;
 
 /* progress bar background rectangle length & width variate */
-int progress_bar_bg_rect_len = 0; 
+int progress_bar_bg_rect_len = 0;
 
 /* progress bar front rectangle start position variate */
-int progress_bar_front_rect_x = 0; 
-int progress_bar_front_rect_y = 0; 
+int progress_bar_front_rect_x = 0;
+int progress_bar_front_rect_y = 0;
 
 /* progress bar background rectangle width */
 #define PROGRESS_BAR_BG_RECT_WID      12
@@ -92,18 +92,7 @@ private:
           /* load image */
           m_image.LoadImage( m_filename );
 
-          m_sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-          if (m_sock_fd <= 0) {
-               perror("socket failed: ");
-               return false;
-          }
-          /* init & connect socket of progress notify server */
-          address.sun_family = AF_UNIX;
-          strcpy(address.sun_path, SWUPDATE_PROGRESS_PATH);
-
-          if (-1 == connect(m_sock_fd, (struct sockaddr *)&address, sizeof(address)))
-              perror("connect failed: ");
-
+          m_sock_fd = sock_conn();
           return true;
     }
 
@@ -120,7 +109,7 @@ private:
           screen_height = (int) surface.GetHeight();
           image_width = (int) m_image.GetWidth();
           image_height = (int) m_image.GetHeight();
-          
+
           /* centered the image */
           //int x = (screen_width - image_width)  / 2;
           //int y = (screen_height - image_height) / 2;
@@ -128,7 +117,7 @@ private:
           int x = 0, y = 0;
           surface.Blit( m_image, NULL, x, y );
 
-          /* 
+          /*
            |                                                                   |
            |Recovering                                                         |
            |***********************background*******************************   |
@@ -158,7 +147,7 @@ private:
           progress_bar_bg_rect_y = text_start_y + 20;
 
           /* The background rectangle is 4 pixels longer than the front rectangle, (pixel_per_percent * 100) is the length
-             of front rectangle. 
+             of front rectangle.
            */
           progress_bar_bg_rect_len = (pixel_per_percent * 100) + 4;
           progress_bar_front_rect_x = progress_bar_bg_rect_x + 2;
@@ -187,7 +176,7 @@ private:
           static int ret = 0;
           if (m_sock_fd > 0) {
                /* block receiving progress data */
-               while((ret = recv(m_sock_fd, &m_msg, sizeof(m_msg), 0)) <= 0) {
+               while ((ret = recv(m_sock_fd, &m_msg, sizeof(m_msg), 0)) <= 0) {
                     /* if recv() returns 0, it means SWupdate is disconnected, retry to connect */
                     if (ret == 0) {
                          if (-1 == connect(m_sock_fd, (struct sockaddr *)&address, sizeof(address))) {
@@ -214,14 +203,13 @@ private:
      }
 
 private:
-     std::string m_filename;
-     DFBImage    m_image;
-     int                  m_sock_fd;
-     progress_msg         m_msg;
+     std::string  m_filename;
+     DFBImage     m_image;
+     int          m_sock_fd;
+     progress_msg m_msg;
 };
 
-int
-main( int argc, char *argv[] )
+int swupdateui_run( int argc, char *argv[] )
 {
      DFBSwupdateUI app;
 
