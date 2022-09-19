@@ -3,7 +3,7 @@
 #
 .PHONYH: clean
 
-OBJ=event_ui.o swupdate_ipc.o
+OBJ=event_ui.o
 
 all: libcommon.a
 

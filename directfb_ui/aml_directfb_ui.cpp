@@ -36,7 +36,7 @@
 #include "dfbapp.h"
 #include "dfbimage.h"
 #include "../common/aml_ui_run.h"
-#include "../common/swupdate_ipc.h"
+#include "../common/event_ui.h"
 
 #define FONT  "/usr/share/directfb-1.7.7/decker.ttf"
 
@@ -68,6 +68,16 @@ static struct sockaddr_un address;
 int screen_width = 0;
 int screen_height = 0;
 
+/* Callback for refrash the bar */
+void DFBRefrAnim(void *screen, int data)
+{
+     IDirectFBSurface *surface = (IDirectFBSurface *)screen;
+     int cur_percent = data;
+
+     surface->SetColor(0xEE, 0x96, 0x11, 0xFF);
+     surface->FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * pixel_per_percent, PROGRESS_BAR_FRONT_RECT_WID);
+}
+
 class DFBSwupdateUI : public DFBApp {
 public:
     DFBSwupdateUI() {
@@ -92,7 +102,8 @@ private:
           /* load image */
           m_image.LoadImage( m_filename );
 
-          m_sock_fd = sock_conn();
+          m_ref_ent.fd = progress_ipc_connect(true);
+          m_ref_ent.p_bar_refresh = DFBRefrAnim;
           return true;
     }
 
@@ -173,40 +184,19 @@ private:
     }
 
     virtual bool HandleEvent( IDirectFBSurface &surface ) {
-          static int ret = 0;
-          if (m_sock_fd > 0) {
-               /* block receiving progress data */
-               while ((ret = recv(m_sock_fd, &m_msg, sizeof(m_msg), 0)) <= 0) {
-                    /* if recv() returns 0, it means SWupdate is disconnected, retry to connect */
-                    if (ret == 0) {
-                         if (-1 == connect(m_sock_fd, (struct sockaddr *)&address, sizeof(address))) {
-                              perror("connect failed: ");
-                              return false;
-                         }
-                    }
-               }
-          }
+          m_ref_ent.screen = (void *)&surface;
+          progress_handle((void *)(&m_ref_ent));
 
-          int cur_percent = m_msg.cur_percent;
-          if (cur_percent == 0)
-               return true;
+          if (is_swupdateui_finished())
+              return true;
 
-          if ((0 < cur_percent) && (100 >= cur_percent)) {
-               surface.SetColor(0xEE, 0x96, 0x11, 0xFF);
-               surface.FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * pixel_per_percent, PROGRESS_BAR_FRONT_RECT_WID);
-
-          } else {
-               std::cerr << "Error progress: " << cur_percent << std::endl;
-          }
-
-          return true;
+          return false;
      }
 
 private:
-     std::string  m_filename;
-     DFBImage     m_image;
-     int          m_sock_fd;
-     progress_msg m_msg;
+     std::string        m_filename;
+     DFBImage           m_image;
+     lv_refresh_event_t m_ref_ent;
 };
 
 int swupdateui_run( int argc, char *argv[] )

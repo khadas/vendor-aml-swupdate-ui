@@ -21,8 +21,8 @@
 extern "C" {
 #endif
 
-#ifndef __EVENT_H__
-#define __EVENT_H__
+#ifndef __EVENT_UI_H__
+#define __EVENT_UI_H__
 
 #include <stdio.h>
 #include <progress_ipc.h>

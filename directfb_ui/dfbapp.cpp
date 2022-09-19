@@ -124,7 +124,8 @@ DFBApp::Run()
           if (m_flipping)
                m_primary.Flip();
 
-          HandleEvent( m_primary );
+          if (HandleEvent( m_primary ))
+              break;
      }
 }
 

@@ -5,7 +5,7 @@ all: swupdateui
 ifeq ($(CONFIG_LVGL_APP), y)
 LDFLAGS += -llvgl -llv_drivers
 swupdateui: main.o lvgl_ui/liblvgl_ui.a lvgl_porting/liblvgl_porting.a common/libcommon.a
-	$(CXX) $^ -lpthread -o $@ $(LDFLAGS)
+	$(CXX) $^ -lpthread -o $@ $(LDFLAGS) -lswupdate
 
 lvgl_ui/liblvgl_ui.a:
 	$(MAKE) -C lvgl_ui
@@ -16,7 +16,7 @@ lvgl_porting/liblvgl_porting.a:
 else
 LDFLAGS += $(shell $(PKG_CONFIG) --libs directfb) -l++dfb
 swupdateui: main.o directfb_ui/libdirectfb_ui.a common/libcommon.a
-	$(CXX) $^ -o $@ $(LDFLAGS)
+	$(CXX) $^ -o $@ $(LDFLAGS) -lswupdate
 
 directfb_ui/libdirectfb_ui.a:
 	$(MAKE) -C directfb_ui

@@ -22,7 +22,6 @@ extern "C" {
 #endif
 
 #include "event_ui.h"
-#include "swupdate_ipc.h"
 
 int cur_percent = 0;
 
@@ -36,12 +35,15 @@ bool is_swupdateui_finished(void)
 
 void progress_handle(void *data)
 {
-    bool ret = false;
+    int ret = -1;
 
     lv_refresh_event_t *pdata = (lv_refresh_event_t *)data;
-    ret = sock_recv_prog(pdata->fd, (char *)&pdata->msg, sizeof(pdata->msg));
-    if (false == ret)
+    ret = progress_ipc_receive(&pdata->fd, &pdata->msg);
+    if (-1 == ret) {
+        printf("Get the progress value failed!\n");
+        pdata->fd = progress_ipc_connect(true);
         return ;
+    }
 
     if ((cur_percent < 0) || (cur_percent > 100)) {
         printf("Get the error progress, current percent is %d \n", cur_percent);

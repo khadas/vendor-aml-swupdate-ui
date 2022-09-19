@@ -29,7 +29,6 @@ extern "C" {
 #include <lvgl/lvgl.h>
 #include "../common/aml_ui_run.h"
 #include "../common/event_ui.h"
-#include "../common/swupdate_ipc.h"
 #include "../lvgl_porting/lv_port_disp.h"
 #include "../lvgl_porting/lv_port_fs.h"
 
@@ -201,7 +200,7 @@ int swupdateui_run(int argc, char *argv[])
     scr_obj.bar = lv_bar_create(lv_scr_act());
     scr_obj.label = lv_label_create(lv_scr_act());
     scr_obj.img = lv_img_create(lv_scr_act());
-    ref_ent.fd = sock_conn();
+    ref_ent.fd = progress_ipc_connect(true);
     ref_ent.p_bar_refresh = lv_bar_refresh;
 
     /*Init the lable*/
