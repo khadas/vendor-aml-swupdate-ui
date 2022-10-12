@@ -22,15 +22,46 @@ extern "C" {
 #endif
 
 #include "event_ui.h"
+#include <string.h>
 
-int cur_percent = 0;
+static int cur_img_percent = 0;
+const char *status_success = "SWUpdate successful!";
+const char *status_fail    = "SWUpdate failure!";
+const char *status_run     = "Installing image ";
 
-bool is_swupdateui_finished(void)
+static void status_check(lv_refresh_event_t *pdata)
 {
-    if (100 == cur_percent)
-        return true;
-    else
-        return false;
+    if (pdata->msg.status != pdata->ui_status) {
+        pdata->ui_status = pdata->msg.status;
+    }
+
+    if (NULL == pdata->p_show_status)
+        return ;
+
+    switch (pdata->ui_status) {
+        case IDLE:
+        case START:
+        case RUN:
+            if ((0 == cur_img_percent) && (NULL != pdata->msg.cur_image) && (0 != strlen(pdata->msg.cur_image))) {
+                char buf[256] = {0};
+                strncpy(buf, status_run, sizeof(buf) - 1);
+                strncat(buf, pdata->msg.cur_image, (sizeof(buf) - sizeof(status_run) - 1));
+                pdata->p_show_status(pdata->screen, buf);
+            }
+            break;
+        case SUCCESS:
+            pdata->p_show_status(pdata->screen, status_success);
+            break;
+        case FAILURE:
+            pdata->p_show_status(pdata->screen, status_fail);
+            break;
+        case DOWNLOAD:
+        case DONE:
+        case SUBPROCESS:
+            break;
+        default:
+            break;
+    }
 }
 
 void progress_handle(void *data)
@@ -45,19 +76,21 @@ void progress_handle(void *data)
         return ;
     }
 
-    if ((cur_percent < 0) || (cur_percent > 100)) {
-        printf("Get the error progress, current percent is %d \n", cur_percent);
+    if ((pdata->msg.cur_percent < 0) || (pdata->msg.cur_percent > 100)) {
+        printf("Get the error progress, current percent is %d \n", pdata->msg.cur_percent);
         return ;
     }
 
-    if (cur_percent == pdata->msg.cur_percent) {
+    status_check(pdata);
+
+    if (cur_img_percent == pdata->msg.cur_percent) {
         return;
     }
 
-    cur_percent = pdata->msg.cur_percent;
+    cur_img_percent = pdata->msg.cur_percent;
 
-    if (NULL != pdata->p_bar_refresh) {
-        pdata->p_bar_refresh(pdata->screen, cur_percent);
+    if ((0 != cur_img_percent) && (NULL != pdata->p_bar_refresh)) {
+        pdata->p_bar_refresh(pdata->screen, cur_img_percent);
     }
 
 }

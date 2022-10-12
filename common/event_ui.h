@@ -26,18 +26,20 @@ extern "C" {
 
 #include <stdio.h>
 #include <progress_ipc.h>
+#include <swupdate_status.h>
 
 typedef struct
 {
     int fd;
     struct progress_msg msg;
+    RECOVERY_STATUS ui_status;
 
     void *screen;
     void (*p_bar_refresh)(void *, int);
+    void (*p_show_status)(void *, const char *);
     /* data */
 }lv_refresh_event_t;
 
-bool is_swupdateui_finished(void);
 
 void progress_handle(void *data);
 

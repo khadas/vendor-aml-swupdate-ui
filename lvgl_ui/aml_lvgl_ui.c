@@ -70,8 +70,8 @@ sem_t sem_ui_finish;
 #define LV_BAR_WIDTH    400
 #define LV_BAR_HEIGHT   20
 
-/*The label text*/
-static char text[] = "Recoverying";
+/*label Indicates the text displayed when the file is decompressed*/
+static char *label_init = "decompression...";
 
 /**
  * @brief refresh the percent of the bar
@@ -131,10 +131,23 @@ void lv_bar_init(lv_obj_t *bar, lv_style_t *style_bg)
  */
 void lv_label_init(lv_obj_t *label)
 {
-    lv_label_set_text(label, text);
+    lv_label_set_text(label, label_init);
     /* Set label's position, relative to LV_ALIGN_BOTTOM_LEFT */
     lv_obj_align(label, LV_ALIGN_BOTTOM_LEFT, LV_POS_LABEL_X, LV_POS_LABEL_Y);
     lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_BLUE), 0);
+}
+
+/**
+ * @brief show current status via label
+ *
+ * @param label label object
+ */
+void lv_show_status(void *screen, const char *text)
+{
+    lv_screen_obj *screen_obj = (lv_screen_obj *)screen;
+    lv_label_set_text(screen_obj->label, text);
+    lv_obj_align(screen_obj->label, LV_ALIGN_BOTTOM_LEFT, LV_POS_LABEL_X, LV_POS_LABEL_Y);
+    lv_obj_set_style_text_color(screen_obj->label, lv_palette_main(LV_PALETTE_BLUE), 0);
 }
 
 /**
@@ -201,7 +214,9 @@ int swupdateui_run(int argc, char *argv[])
     scr_obj.label = lv_label_create(lv_scr_act());
     scr_obj.img = lv_img_create(lv_scr_act());
     ref_ent.fd = progress_ipc_connect(true);
+    ref_ent.ui_status = IDLE;
     ref_ent.p_bar_refresh = lv_bar_refresh;
+    ref_ent.p_show_status = lv_show_status;
 
     /*Init the lable*/
     lv_label_init(scr_obj.label);
@@ -225,7 +240,7 @@ int swupdateui_run(int argc, char *argv[])
         lv_timer_handler();
 
         /* If the percentage equal to 100, swupdate ui process will be exited. */
-        if (is_swupdateui_finished()) {
+        if ((SUCCESS == ref_ent.ui_status) || (FAILURE == ref_ent.ui_status)) {
             /* Refresh the screen and waiting the animation finish before exit. */
             sem_wait(&sem_ui_finish);
             break;

@@ -104,6 +104,8 @@ private:
 
           m_ref_ent.fd = progress_ipc_connect(true);
           m_ref_ent.p_bar_refresh = DFBRefrAnim;
+          m_ref_ent.ui_status = IDLE;
+          m_ref_ent.p_show_status = NULL;
           return true;
     }
 
@@ -187,7 +189,7 @@ private:
           m_ref_ent.screen = (void *)&surface;
           progress_handle((void *)(&m_ref_ent));
 
-          if (is_swupdateui_finished())
+          if ((SUCCESS == m_ref_ent.ui_status) || (FAILURE == m_ref_ent.ui_status))
               return true;
 
           return false;
