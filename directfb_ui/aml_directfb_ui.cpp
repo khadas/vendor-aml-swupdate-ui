@@ -189,8 +189,10 @@ private:
           m_ref_ent.screen = (void *)&surface;
           progress_handle((void *)(&m_ref_ent));
 
-          if ((SUCCESS == m_ref_ent.ui_status) || (FAILURE == m_ref_ent.ui_status))
+          if ((SUCCESS == m_ref_ent.ui_status) || (FAILURE == m_ref_ent.ui_status)) {
+              surface.Clear();
               return true;
+          }
 
           return false;
      }
