@@ -28,6 +28,7 @@ static int cur_img_percent = 0;
 const char *status_success = "SWUpdate successful!";
 const char *status_fail    = "SWUpdate failure!";
 const char *status_run     = "Installing image ";
+char info[PRINFOSIZE] = {0};
 
 static void status_check(lv_refresh_event_t *pdata)
 {
@@ -37,6 +38,14 @@ static void status_check(lv_refresh_event_t *pdata)
 
     if (NULL == pdata->p_show_status)
         return ;
+
+    if (SOURCE_DOWNLOADER == pdata->msg.source) {
+        if (strncmp(info, pdata->msg.info, (PRINFOSIZE - 1))) {
+            memset(info, 0, PRINFOSIZE);
+            strncpy(info, pdata->msg.info, (PRINFOSIZE - 1));
+            pdata->p_show_status(pdata->screen, pdata->msg.info);
+        }
+    }
 
     switch (pdata->ui_status) {
         case IDLE:

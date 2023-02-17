@@ -68,6 +68,8 @@ static struct sockaddr_un address;
 int screen_width = 0;
 int screen_height = 0;
 
+IDirectFBFont font;
+
 /* Callback for refrash the bar */
 void DFBRefrAnim(void *screen, int data)
 {
@@ -76,6 +78,24 @@ void DFBRefrAnim(void *screen, int data)
 
      surface->SetColor(0xEE, 0x96, 0x11, 0xFF);
      surface->FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * pixel_per_percent, PROGRESS_BAR_FRONT_RECT_WID);
+}
+
+/* Callback for refrash the text*/
+void DFBRefrText(void *screen, const char *msg)
+{
+     IDirectFBSurface *surface = (IDirectFBSurface *)screen;
+
+     /* Set the same color as the background, and call FillRectangle
+      * to overwrite the previous font, (text_start_x, text_start_y)
+      * in the lower left quarter, so text_start_y need to reduce 20.
+       */
+     surface->SetColor(0, 0, 0, 255);
+     surface->FillRectangle(text_start_x, text_start_y - 20, screen_width, 30);
+
+     /* Set new font*/
+     surface->SetColor(0x80, 0x80, 0xff, 0xff);
+     surface->SetFont(font);
+     surface->DrawString (msg, -1, text_start_x, text_start_y, DSTF_NONE);
 }
 
 class DFBSwupdateUI : public DFBApp {
@@ -87,7 +107,6 @@ public:
     }
 
 private:
-    IDirectFBFont font;
 
      /* called after initialization */
      virtual bool Setup( int width, int height ) {
@@ -105,7 +124,7 @@ private:
           m_ref_ent.fd = progress_ipc_connect(true);
           m_ref_ent.p_bar_refresh = DFBRefrAnim;
           m_ref_ent.ui_status = IDLE;
-          m_ref_ent.p_show_status = NULL;
+          m_ref_ent.p_show_status = DFBRefrText;
           return true;
     }
 
