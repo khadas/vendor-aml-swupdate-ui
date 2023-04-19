@@ -40,9 +40,6 @@
 
 #define FONT  "/usr/share/directfb-1.7.7/decker.ttf"
 
-/* fixed the front rectangle length by pixel_per_percent */
-int pixel_per_percent = 4;
-
 /* text start position variate */
 int text_start_x = 0;
 int text_start_y = 0;
@@ -75,9 +72,14 @@ void DFBRefrAnim(void *screen, int data)
 {
      IDirectFBSurface *surface = (IDirectFBSurface *)screen;
      int cur_percent = data;
+     //printf("======data:%d=screen width:%d=progress_bar_bg_rect_len:%d====\n", cur_percent, screen_width, progress_bar_bg_rect_len);
 
+     /* Redraw the background rectangle */
+     surface->SetColor(0xEE, 0xEE, 0xEE, 0xFF);
+     surface->FillRectangle(progress_bar_bg_rect_x, progress_bar_bg_rect_y, progress_bar_bg_rect_len, PROGRESS_BAR_BG_RECT_WID);
+     /* Update the bar rectangle */
      surface->SetColor(0xEE, 0x96, 0x11, 0xFF);
-     surface->FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * pixel_per_percent, PROGRESS_BAR_FRONT_RECT_WID);
+     surface->FillRectangle(progress_bar_front_rect_x, progress_bar_front_rect_y, cur_percent * screen_width * 90 / 100 / 100, PROGRESS_BAR_FRONT_RECT_WID);
 }
 
 /* Callback for refrash the text*/
@@ -89,7 +91,7 @@ void DFBRefrText(void *screen, const char *msg)
       * to overwrite the previous font, (text_start_x, text_start_y)
       * in the lower left quarter, so text_start_y need to reduce 20.
        */
-     surface->SetColor(0, 0, 0, 255);
+     surface->SetColor(0x00, 0x00, 0x00, 0xFE);
      surface->FillRectangle(text_start_x, text_start_y - 20, screen_width, 30);
 
      /* Set new font*/
@@ -150,26 +152,26 @@ private:
           surface.Blit( m_image, NULL, x, y );
 
           /*
-           |                                                                   |
-           |Recovering                                                         |
-           |***********************background*******************************   |
-           |*   2                                                       2  *   |
-           |* 2|----------------------front-----------------------------|2 *   |
-           |*  |--------------------------------------------------------|  *   |
-           |*   2                                                       2  *   |
-           |****************************************************************   |
-           |                                                                   |
-           |________________________baseline___________________________________|
+           |                                                                         |
+           |      Recovering                                                         |
+           |<-5%->***********************background*******************************   |
+           |      *   2 pixel                                                    *   |
+           |      *-------------------------front--------------------------------*   |
+           |      *--------------------------------------------------------------*   |
+           |      *   2                                                          *   |
+           |      ****************************************************************   |
+           |                                                                         |
+           |______________________________baseline___________________________________|
            The front rectangle's length should be a multiple of 100 because the
            progress percent is 100, so we can express percentages as integer
            pixels. The background rectangle's start position and length can
            calculated, because the background rectangle is 4 pixels longer than the front rectangle.
            */
           /* adjust the start position of the text, the height is 50 pixels from the baseline */
-          text_start_x = 0;
+          text_start_x = screen_width * 5 / 100;
           text_start_y = screen_height - 50;
           surface.SetFont( font );
-          surface.SetColor(0x80, 0x80, 0xff, 0xff);
+          surface.SetColor(0x80, 0x80, 0xff, 0xFF);
           surface.SetSrcBlendFunction( DSBF_INVSRCALPHA );
           surface.SetDstBlendFunction( DSBF_INVSRCALPHA );
           surface.DrawString ("Recovering", -1, text_start_x, text_start_y, DSTF_NONE);
@@ -178,11 +180,11 @@ private:
           progress_bar_bg_rect_x = text_start_x;
           progress_bar_bg_rect_y = text_start_y + 20;
 
-          /* The background rectangle is 4 pixels longer than the front rectangle, (pixel_per_percent * 100) is the length
-             of front rectangle.
+          /* The background rectangle is 90 percent of the screen length, the same of length as
+             front rectangle.
            */
-          progress_bar_bg_rect_len = (pixel_per_percent * 100) + 4;
-          progress_bar_front_rect_x = progress_bar_bg_rect_x + 2;
+          progress_bar_bg_rect_len = screen_width * 90 / 100;
+          progress_bar_front_rect_x = progress_bar_bg_rect_x;
           progress_bar_front_rect_y = progress_bar_bg_rect_y + 2;
           /* draw background rectangle */
           surface.SetColor(0xEE, 0xEE, 0xEE, 0xFF);

@@ -73,9 +73,43 @@ static void status_check(lv_refresh_event_t *pdata)
     }
 }
 
+/* Calculate the percentage of total progress */
+static int calc_perc_of_total(struct progress_msg *msg)
+{
+    static int cur_step_base;
+    int cur_perc_convert = 0;
+    int total_percent = 0;
+    static last_cur_step;
+    static last_total_percent;
+
+    /* Calculate how much of each step is a percentage of the total,
+     * Each step is a stage, and the percentage of completed steps plus
+     * the percentage of current steps equals the percentage of total progress.
+     *
+     * cur_step_base is calculated by the current step represents a percentage
+     * of the total step.
+     * cur_perc_convert convert the percentage of the current image to
+     * the total percentage
+     *  */
+    cur_step_base = 100 * (msg->cur_step - 1) / msg->nsteps;
+    cur_perc_convert = msg->cur_percent / msg->nsteps;
+    total_percent = (cur_step_base + cur_perc_convert);
+
+    if ((msg->cur_step == last_cur_step) && (total_percent < last_total_percent)) {
+        //printf("!!!Warning !!!The same step,current total percent less then last total percent !\n");
+        //printf("[cur_step:%d][last_cur_step:%d][total_percent:%d][last_total_percent:%d]\n", msg->cur_step, last_cur_step, total_percent, last_total_percent);
+        return last_total_percent;
+    }
+    last_cur_step = msg->cur_step;
+    last_total_percent = total_percent;
+
+    return total_percent;
+}
+
 void progress_handle(void *data)
 {
     int ret = -1;
+    int percent = 0;
 
     lv_refresh_event_t *pdata = (lv_refresh_event_t *)data;
     ret = progress_ipc_receive(&pdata->fd, &pdata->msg);
@@ -92,11 +126,15 @@ void progress_handle(void *data)
 
     status_check(pdata);
 
-    if (cur_img_percent == pdata->msg.cur_percent) {
+    percent = calc_perc_of_total(&pdata->msg);
+    //printf("[hnd_name:%s][msg_percent:%d][total_percent:%d]", pdata->msg.hnd_name, pdata->msg.cur_percent, percent);
+    //printf("[cur_step:%d][nsteps:%d]\n", pdata->msg.cur_step, pdata->msg.nsteps);
+
+    if (cur_img_percent == percent) {
         return;
     }
 
-    cur_img_percent = pdata->msg.cur_percent;
+    cur_img_percent = percent;
 
     if ((0 != cur_img_percent) && (NULL != pdata->p_bar_refresh)) {
         pdata->p_bar_refresh(pdata->screen, cur_img_percent);
