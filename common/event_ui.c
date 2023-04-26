@@ -51,7 +51,7 @@ static void status_check(lv_refresh_event_t *pdata)
         case IDLE:
         case START:
         case RUN:
-            if ((0 == cur_img_percent) && (NULL != pdata->msg.cur_image) && (0 != strlen(pdata->msg.cur_image))) {
+            if ((NULL != pdata->msg.cur_image) && (0 != strlen(pdata->msg.cur_image))) {
                 char buf[256] = {0};
                 strncpy(buf, status_run, sizeof(buf) - 1);
                 strncat(buf, pdata->msg.cur_image, (sizeof(buf) - sizeof(status_run) - 1));
