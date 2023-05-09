@@ -16,9 +16,12 @@
 /*********************
  *      DEFINES
  *********************/
-#define DISP_BUF_SIZE    (480 * 480)
-#define LV_SCREEN_LEN    480
-#define LV_SCREEN_WID    480
+/* A larger buffer results in better performance but above 1/10 screen sized buffer(s)
+ there is no significant performance improvement. Therefore it's recommended to choose
+ the size of the draw buffer(s) to at least 1/10 screen sized. */
+#define DISP_BUF_SIZE    (1920 * 1080 / 10)
+//#define LV_SCREEN_LEN    480
+//#define LV_SCREEN_WID    480
 /**********************
  *      TYPEDEFS
  **********************/
@@ -44,7 +47,7 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
  *   GLOBAL FUNCTIONS
  **********************/
 
-void lv_port_disp_init(void)
+void lv_port_disp_init(unsigned int width, unsigned int height)
 {
     /*-------------------------
      * Initialize your display
@@ -104,8 +107,8 @@ void lv_port_disp_init(void)
 
     /*Set the resolution of the display*/
     disp_drv.draw_buf   = &draw_buf_dsc_1;
-    disp_drv.hor_res = LV_SCREEN_LEN;
-    disp_drv.ver_res = LV_SCREEN_WID;
+    disp_drv.hor_res = width;
+    disp_drv.ver_res = height;
 
     /*Used to copy the buffer's content to the display*/
     disp_drv.flush_cb = fbdev_flush;

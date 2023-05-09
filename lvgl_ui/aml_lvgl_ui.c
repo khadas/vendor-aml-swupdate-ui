@@ -67,8 +67,8 @@ sem_t sem_ui_finish;
 #define LV_IMAGE_SIZE_Y 300
 
 /* Bar's width & height */
-#define LV_BAR_WIDTH    400
-#define LV_BAR_HEIGHT   20
+unsigned int lv_bar_width = 0;
+unsigned int lv_bar_height = 0;
 
 /*label Indicates the text displayed when the file is decompressed*/
 static char *label_init = "decompression...";
@@ -106,7 +106,7 @@ void lv_bar_init(lv_obj_t *bar, lv_style_t *style_bg)
     /*Set the padding to 6*/
     lv_style_set_pad_all(style_bg, 6);
 
-    lv_obj_set_size(bar, LV_BAR_WIDTH, LV_BAR_HEIGHT);
+    lv_obj_set_size(bar, (lv_bar_width * 90 / 100), (lv_bar_height * 3 / 100));
     /* set animations finish time */
     lv_obj_set_style_anim_time(bar, LV_ANIM_FINISH_TIME, 0);
     lv_obj_set_style_border_color(bar, lv_palette_main(LV_PALETTE_BLUE), LV_PART_MAIN);
@@ -119,7 +119,7 @@ void lv_bar_init(lv_obj_t *bar, lv_style_t *style_bg)
 
     lv_bar_set_value(bar, 0, LV_ANIM_ON);
     /* Set bar's position, relative to LV_ALIGN_BOTTOM_LEFT */
-    lv_obj_align(bar, LV_ALIGN_BOTTOM_LEFT, LV_POS_BAR_X, LV_POS_BAR_Y);
+    lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, LV_POS_BAR_X, LV_POS_BAR_Y);
     lv_obj_add_event_cb(bar, obj_bar_refr_anim, LV_EVENT_REFRESH, NULL);
     lv_obj_add_event_cb(bar, obj_bar_is_covered, LV_EVENT_COVER_CHECK, NULL);
 }
@@ -132,8 +132,8 @@ void lv_bar_init(lv_obj_t *bar, lv_style_t *style_bg)
 void lv_label_init(lv_obj_t *label)
 {
     lv_label_set_text(label, label_init);
-    /* Set label's position, relative to LV_ALIGN_BOTTOM_LEFT */
-    lv_obj_align(label, LV_ALIGN_BOTTOM_LEFT, LV_POS_LABEL_X, LV_POS_LABEL_Y);
+    /* Set label's position, relative to LV_ALIGN_BOTTOM_MID */
+    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, LV_POS_LABEL_X, LV_POS_LABEL_Y);
     lv_obj_set_style_text_color(label, lv_palette_main(LV_PALETTE_BLUE), 0);
 }
 
@@ -146,7 +146,7 @@ void lv_show_status(void *screen, const char *text)
 {
     lv_screen_obj *screen_obj = (lv_screen_obj *)screen;
     lv_label_set_text(screen_obj->label, text);
-    lv_obj_align(screen_obj->label, LV_ALIGN_BOTTOM_LEFT, LV_POS_LABEL_X, LV_POS_LABEL_Y);
+    lv_obj_align(screen_obj->label, LV_ALIGN_BOTTOM_MID, LV_POS_LABEL_X, LV_POS_LABEL_Y);
     lv_obj_set_style_text_color(screen_obj->label, lv_palette_main(LV_PALETTE_BLUE), 0);
 }
 
@@ -159,8 +159,7 @@ void lv_show_status(void *screen, const char *text)
 void lv_img_init(lv_obj_t *img, char *path)
 {
     lv_img_set_src(img, path);
-    lv_obj_align(img, LV_ALIGN_TOP_LEFT, LV_POS_IMAGE_X, LV_POS_IMAGE_Y);
-    lv_obj_set_size(img, LV_IMAGE_SIZE_X, LV_IMAGE_SIZE_Y);
+    lv_obj_align(img, LV_ALIGN_CENTER, LV_POS_IMAGE_X, LV_POS_IMAGE_Y);
 }
 
 /**
@@ -173,6 +172,18 @@ void lv_bar_refresh(void *screen, int32_t data)
 {
     lv_screen_obj *scr = (lv_screen_obj *)screen;
     lv_event_send(scr->bar, LV_EVENT_REFRESH, &data);
+}
+
+/**
+ * @brief Set the background to black color(R:0x00,G:0x00,B:0x00)
+ *
+ */
+void lv_set_bg_color(void)
+{
+    lv_style_t main_style;
+    lv_style_init(&main_style);
+    lv_style_set_bg_color(&main_style, lv_color_make(0x00, 0x00, 0x00));
+    lv_obj_add_style(lv_scr_act(), &main_style, 0);
 }
 
 /**
@@ -189,8 +200,8 @@ int swupdateui_run(int argc, char *argv[])
     lv_refresh_event_t ref_ent;
 
     /*Check the param*/
-    if (argc != 2) {
-        printf("Usage: %s <filename> \n", argv[0]);
+    if (argc != 4) {
+        printf("Usage: %s <filename> <width> <height> \n", argv[0]);
         return -1;
     }
 
@@ -204,8 +215,10 @@ int swupdateui_run(int argc, char *argv[])
     /*LittlevGL init*/
     lv_init();
 
-    /*display init*/
-    lv_port_disp_init();
+    /*display init*/\
+    lv_bar_width = atoi(argv[2]);
+    lv_bar_height = atoi(argv[3]);
+    lv_port_disp_init(lv_bar_width, lv_bar_height);
 
     /* filesystem init */
     lv_port_fs_init();
@@ -230,6 +243,7 @@ int swupdateui_run(int argc, char *argv[])
     (lv_screen_obj *)(ref_ent.screen);
     ref_ent.screen = &scr_obj;
 
+    lv_set_bg_color();
     sem_init(&sem_ui_finish, 0, 0);
     while (1) {
         progress_handle((void *)(&ref_ent));
@@ -241,6 +255,11 @@ int swupdateui_run(int argc, char *argv[])
 
         /* If the percentage equal to 100, swupdate ui process will be exited. */
         if ((SUCCESS == ref_ent.ui_status) || (FAILURE == ref_ent.ui_status)) {
+            /* Refresh the last time of the bar */
+            usleep(LV_DISP_DEF_REFR_PERIOD*1000);
+            lv_tick_inc(LV_DISP_DEF_REFR_PERIOD);
+            lv_timer_handler();
+
             /* Refresh the screen and waiting the animation finish before exit. */
             sem_wait(&sem_ui_finish);
             break;

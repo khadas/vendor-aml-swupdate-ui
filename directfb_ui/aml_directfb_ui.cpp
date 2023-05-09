@@ -193,9 +193,9 @@ private:
 
     bool ParseArgs( int argc, char *argv[] ) {
           /* Parse the command line. */
-          if (argc != 2 || !argv[1] || !argv[1][0]) {
+          if (argc != 4 || !argv[1] || !argv[1][0]) {
                std::cerr << std::endl;
-               std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
+               std::cerr << "Usage: " << argv[0] << "<filename> <width> <height>" << std::endl;
                std::cerr << std::endl;
                return false;
           }

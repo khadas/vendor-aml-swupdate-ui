@@ -126,9 +126,16 @@ void progress_handle(void *data)
 
     status_check(pdata);
 
+    /* If the status returns successfully, you do not
+       need to calculate the percentage, just return 100 percent */
+    if (SUCCESS == pdata->ui_status) {
+        pdata->p_bar_refresh(pdata->screen, 100);
+        return ;
+    }
+
     percent = calc_perc_of_total(&pdata->msg);
     //printf("[hnd_name:%s][msg_percent:%d][total_percent:%d]", pdata->msg.hnd_name, pdata->msg.cur_percent, percent);
-    //printf("[cur_step:%d][nsteps:%d]\n", pdata->msg.cur_step, pdata->msg.nsteps);
+    //printf("[cur_step:%d][nsteps:%d][status:%d]\n", pdata->msg.cur_step, pdata->msg.nsteps, pdata->ui_status);
 
     if (cur_img_percent == percent) {
         return;
