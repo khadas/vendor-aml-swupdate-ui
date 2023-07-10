@@ -71,7 +71,7 @@ unsigned int lv_bar_width = 0;
 unsigned int lv_bar_height = 0;
 
 /*label Indicates the text displayed when the file is decompressed*/
-static char *label_init = "decompression...";
+static char *label_init = "Please do not power off before upgrade...";
 
 /**
  * @brief refresh the percent of the bar
@@ -187,6 +187,18 @@ void lv_set_bg_color(void)
 }
 
 /**
+ * @brief
+ *
+ */
+static void flush_ui(void)
+{
+    usleep(LV_DISP_DEF_REFR_PERIOD*1000);
+    lv_tick_inc(LV_DISP_DEF_REFR_PERIOD);
+    /* Sleep at least one refresh period, reference to LV_DISP_DEF_REFR_PERIOD[ms] defined in lv_conf.h */
+    lv_timer_handler();
+}
+
+/**
  * @brief lvgl GUI start running
  *
  * @param argc
@@ -215,7 +227,7 @@ int swupdateui_run(int argc, char *argv[])
     /*LittlevGL init*/
     lv_init();
 
-    /*display init*/\
+    /*display init*/
     lv_bar_width = atoi(argv[2]);
     lv_bar_height = atoi(argv[3]);
     lv_port_disp_init(lv_bar_width, lv_bar_height);
@@ -231,35 +243,33 @@ int swupdateui_run(int argc, char *argv[])
     ref_ent.p_bar_refresh = lv_bar_refresh;
     ref_ent.p_show_status = lv_show_status;
 
-    /*Init the lable*/
-    lv_label_init(scr_obj.label);
-
-    /* Init bar config */
-    lv_bar_init(scr_obj.bar, &scr_obj.style_bg);
+    /* Set the background color to black */
+    lv_set_bg_color();
 
     /*Init the image*/
     lv_img_init(scr_obj.img, file_path);
 
+    /*Init the label*/
+    lv_label_init(scr_obj.label);
+
+    /* Display the decompression info before install image */
+    flush_ui();
+
+    /* Init bar config */
+    lv_bar_init(scr_obj.bar, &scr_obj.style_bg);
+
     (lv_screen_obj *)(ref_ent.screen);
     ref_ent.screen = &scr_obj;
 
-    lv_set_bg_color();
     sem_init(&sem_ui_finish, 0, 0);
     while (1) {
         progress_handle((void *)(&ref_ent));
 
-        usleep(LV_DISP_DEF_REFR_PERIOD*1000);
-        lv_tick_inc(LV_DISP_DEF_REFR_PERIOD);
-        /* Sleep at least one refresh period, reference to LV_DISP_DEF_REFR_PERIOD[ms] defined in lv_conf.h */
-        lv_timer_handler();
-
+        flush_ui();
         /* If the percentage equal to 100, swupdate ui process will be exited. */
         if ((SUCCESS == ref_ent.ui_status) || (FAILURE == ref_ent.ui_status)) {
-            /* Refresh the last time of the bar */
-            usleep(LV_DISP_DEF_REFR_PERIOD*1000);
-            lv_tick_inc(LV_DISP_DEF_REFR_PERIOD);
-            lv_timer_handler();
-
+            /* Need to continue to confirm why it is necessary to flush twice. */
+            flush_ui();
             /* Refresh the screen and waiting the animation finish before exit. */
             sem_wait(&sem_ui_finish);
             break;

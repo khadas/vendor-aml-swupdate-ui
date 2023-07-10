@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include "event_ui.h"
+#include "aml_ui_run.h"
 #include <string.h>
 
 static int cur_img_percent = 0;
@@ -36,14 +37,13 @@ static void status_check(lv_refresh_event_t *pdata)
         pdata->ui_status = pdata->msg.status;
     }
 
-    if (NULL == pdata->p_show_status)
-        return ;
-
+    DBG_MSG("msg.source:%d msg info:%s download proc:%d status:%d\n", pdata->msg.source, pdata->msg.info, pdata->msg.cur_percent, pdata->msg.status);
     if (SOURCE_DOWNLOADER == pdata->msg.source) {
         if (strncmp(info, pdata->msg.info, (PRINFOSIZE - 1))) {
             memset(info, 0, PRINFOSIZE);
             strncpy(info, pdata->msg.info, (PRINFOSIZE - 1));
             pdata->p_show_status(pdata->screen, pdata->msg.info);
+            pdata->p_bar_refresh(pdata->screen, pdata->msg.cur_percent);
         }
     }
 
@@ -96,8 +96,8 @@ static int calc_perc_of_total(struct progress_msg *msg)
     total_percent = (cur_step_base + cur_perc_convert);
 
     if ((msg->cur_step == last_cur_step) && (total_percent < last_total_percent)) {
-        //printf("!!!Warning !!!The same step,current total percent less then last total percent !\n");
-        //printf("[cur_step:%d][last_cur_step:%d][total_percent:%d][last_total_percent:%d]\n", msg->cur_step, last_cur_step, total_percent, last_total_percent);
+        DBG_MSG("!!!Warning !!!The same step,current total percent less then last total percent !\n");
+        DBG_MSG("[cur_step:%d][last_cur_step:%d][total_percent:%d][last_total_percent:%d]\n", msg->cur_step, last_cur_step, total_percent, last_total_percent);
         return last_total_percent;
     }
     last_cur_step = msg->cur_step;
@@ -124,6 +124,11 @@ void progress_handle(void *data)
         return ;
     }
 
+    if ((NULL == pdata->p_show_status) || (NULL == pdata->p_bar_refresh)) {
+        printf("No label or bar flush handle!");
+        return ;
+    }
+
     status_check(pdata);
 
     /* If the status returns successfully, you do not
@@ -133,17 +138,18 @@ void progress_handle(void *data)
         return ;
     }
 
-    percent = calc_perc_of_total(&pdata->msg);
-    //printf("[hnd_name:%s][msg_percent:%d][total_percent:%d]", pdata->msg.hnd_name, pdata->msg.cur_percent, percent);
-    //printf("[cur_step:%d][nsteps:%d][status:%d]\n", pdata->msg.cur_step, pdata->msg.nsteps, pdata->ui_status);
+    if (SOURCE_DOWNLOADER != pdata->msg.source)
+        percent = calc_perc_of_total(&pdata->msg);
+
+    DBG_MSG("[hnd_name:%s][msg_percent:%d][total_percent:%d]", pdata->msg.hnd_name, pdata->msg.cur_percent, percent);
+    DBG_MSG("[cur_step:%d][nsteps:%d][status_local:%d][status_msg:%d]\n", pdata->msg.cur_step, pdata->msg.nsteps, pdata->ui_status, pdata->msg.status);
 
     if (cur_img_percent == percent) {
         return;
     }
 
     cur_img_percent = percent;
-
-    if ((0 != cur_img_percent) && (NULL != pdata->p_bar_refresh)) {
+    if (0 != cur_img_percent) {
         pdata->p_bar_refresh(pdata->screen, cur_img_percent);
     }
 

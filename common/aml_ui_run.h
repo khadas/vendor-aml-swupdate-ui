@@ -25,6 +25,13 @@ extern "C" {
 
 int swupdateui_run(int argc, char *argv[]);
 
+#define SWU_UI_DBG     1
+#if     SWU_UI_DBG
+#define DBG_MSG(...)   printf(__VA_ARGS__)
+#else
+#define DBG_MSG(...)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
