@@ -192,10 +192,17 @@ void lv_set_bg_color(void)
  */
 static void flush_ui(void)
 {
-    usleep(LV_DISP_DEF_REFR_PERIOD*1000);
+    /* Reference to LV_DISP_DEF_REFR_PERIOD[ms] defined in lv_conf.h,default is 30 */
     lv_tick_inc(LV_DISP_DEF_REFR_PERIOD);
-    /* Sleep at least one refresh period, reference to LV_DISP_DEF_REFR_PERIOD[ms] defined in lv_conf.h */
-    lv_timer_handler();
+
+    /* lv_refr_now() and lv_timer_handler() can both be used to refresh the display,
+     * the difference is that lv_refr_now() does not care about any problems directly refresh,
+     * lv_timer_handler() in each refresh action first record the current tick,
+     * and then refresh the next cycle.
+     * If you want to use lv_timer_handler(), remember to call flush_ui()
+     * twice on the last refresh action. */
+    lv_refr_now(NULL);
+    //lv_timer_handler();
 }
 
 /**
@@ -266,10 +273,10 @@ int swupdateui_run(int argc, char *argv[])
         progress_handle((void *)(&ref_ent));
 
         flush_ui();
+        usleep(LV_DISP_DEF_REFR_PERIOD*1000);
+
         /* If the percentage equal to 100, swupdate ui process will be exited. */
         if ((SUCCESS == ref_ent.ui_status) || (FAILURE == ref_ent.ui_status)) {
-            /* Need to continue to confirm why it is necessary to flush twice. */
-            flush_ui();
             /* Refresh the screen and waiting the animation finish before exit. */
             sem_wait(&sem_ui_finish);
             break;

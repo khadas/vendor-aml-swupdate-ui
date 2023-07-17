@@ -37,7 +37,7 @@ static void status_check(lv_refresh_event_t *pdata)
         pdata->ui_status = pdata->msg.status;
     }
 
-    DBG_MSG("msg.source:%d msg info:%s download proc:%d status:%d\n", pdata->msg.source, pdata->msg.info, pdata->msg.cur_percent, pdata->msg.status);
+    DBG_MSG("msg.source:%d msg info:%s download perc:%d status:%d\n", pdata->msg.source, pdata->msg.info, pdata->msg.cur_percent, pdata->msg.status);
     if (SOURCE_DOWNLOADER == pdata->msg.source) {
         if (strncmp(info, pdata->msg.info, (PRINFOSIZE - 1))) {
             memset(info, 0, PRINFOSIZE);
