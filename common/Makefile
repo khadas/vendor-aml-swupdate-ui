@@ -3,15 +3,13 @@
 #
 .PHONYH: clean
 
-OBJ=event_ui.o
+all: $(OUTPUT)/libcommon.a
 
-all: libcommon.a
-
-libcommon.a:$(OBJ)
+$(OUTPUT)/libcommon.a:$(OUTPUT)/event_ui.o
 	$(AR) -cvr $@ $^
 
-$(OBJ):%.o:%.c
-	$(CC) $(CFLAGS) -O3 $(LDFLAGS) -g -c $^ -o $@
+$(OUTPUT)/event_ui.o:event_ui.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
 
 clean:
 	rm -rf *.o *.a

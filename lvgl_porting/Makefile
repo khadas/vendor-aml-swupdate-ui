@@ -1,11 +1,14 @@
 .PHONYH: all install clean
 
-all: liblvgl_porting.a
+all: $(OUTPUT)/liblvgl_porting.a
 
-liblvgl_porting.a:lv_port_disp.o lv_port_fs.o
+$(OUTPUT)/liblvgl_porting.a:$(OUTPUT)/lv_port_disp.o $(OUTPUT)/lv_port_fs.o
 	$(AR) -cvr $@ $^
 
-lv_port_disp.o lv_port_fs.o:%.o:%.c
+$(OUTPUT)/lv_port_disp.o: lv_port_disp.c
+	$(CC) $(CFLAGS) -O3 $(LDFLAGS) -g -c $^ -o $@
+
+$(OUTPUT)/lv_port_fs.o: lv_port_fs.c
 	$(CC) $(CFLAGS) -O3 $(LDFLAGS) -g -c $^ -o $@
 
 clean:

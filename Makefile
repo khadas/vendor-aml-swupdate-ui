@@ -1,17 +1,20 @@
 .PHONYH: clean
+CFLAGS += -g -O3
 
-all: swupdateui
+OUT_DIR ?= $(CURDIR)
+
+all: $(OUT_DIR)/swupdateui
 
 ifeq ($(CONFIG_LVGL_APP), y)
-LDFLAGS += -llvgl -llv_drivers
-swupdateui: main.o lvgl_ui/liblvgl_ui.a lvgl_porting/liblvgl_porting.a common/libcommon.a
-	$(CXX) $^ -lpthread -o $@ $(LDFLAGS) -lswupdate
+LDFLAGS += -llvgl -llv_drivers -lswupdate
+$(OUT_DIR)/swupdateui: $(OUT_DIR)/main.o $(OUT_DIR)/liblvgl_ui.a $(OUT_DIR)/liblvgl_porting.a $(OUT_DIR)/libcommon.a
+	$(CXX) $^ -lpthread $(LDFLAGS) -o $@
 
-lvgl_ui/liblvgl_ui.a:
-	$(MAKE) -C lvgl_ui
+$(OUT_DIR)/liblvgl_ui.a:
+	$(MAKE) -C lvgl_ui OUTPUT=$(OUT_DIR)
 
-lvgl_porting/liblvgl_porting.a:
-	$(MAKE) -C lvgl_porting
+$(OUT_DIR)/liblvgl_porting.a:
+	$(MAKE) -C lvgl_porting OUTPUT=$(OUT_DIR)
 
 else
 LDFLAGS += $(shell $(PKG_CONFIG) --libs directfb) -l++dfb
@@ -23,10 +26,10 @@ directfb_ui/libdirectfb_ui.a:
 
 endif
 
-common/libcommon.a:
-	$(MAKE) -C common
+$(OUT_DIR)/libcommon.a:
+	$(MAKE) -C common OUTPUT=$(OUT_DIR)
 
-main.o: main.cpp
+$(OUT_DIR)/main.o: main.cpp
 	$(CXX) $(CFLAGS) -O3 $(LDFLAGS) -c $< -o $@
 
 clean:

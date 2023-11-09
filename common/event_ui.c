@@ -79,8 +79,8 @@ static int calc_perc_of_total(struct progress_msg *msg)
     static int cur_step_base;
     int cur_perc_convert = 0;
     int total_percent = 0;
-    static last_cur_step;
-    static last_total_percent;
+    static int last_cur_step;
+    static int last_total_percent;
 
     /* Calculate how much of each step is a percentage of the total,
      * Each step is a stage, and the percentage of completed steps plus
