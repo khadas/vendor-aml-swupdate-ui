@@ -213,6 +213,9 @@ private:
           if ((SUCCESS == m_ref_ent.ui_status) || (FAILURE == m_ref_ent.ui_status)) {
               surface.Clear();
               return true;
+          } else if ((VER_OLDER == ref_ent.ui_status) || (VER_SAME == ref_ent.ui_status)) {
+              printf("A higher or same version image has installed, skipping...\n");
+              return true;
           }
 
           return false;

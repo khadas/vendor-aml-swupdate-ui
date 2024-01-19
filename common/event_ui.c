@@ -26,9 +26,11 @@ extern "C" {
 #include <string.h>
 
 static int cur_img_percent = 0;
-const char *status_success = "SWUpdate successful!";
+const char *status_success = "SWUpdate successful!Do not power off，rebooting...";
 const char *status_fail    = "SWUpdate failure!";
 const char *status_run     = "Installing image ";
+const char *status_older    = "A higher version image has installed, skipping...";
+const char *status_same    = "A same version image has installed, skipping...";
 char info[PRINFOSIZE] = {0};
 
 static void status_check(lv_refresh_event_t *pdata)
@@ -67,6 +69,12 @@ static void status_check(lv_refresh_event_t *pdata)
         case DOWNLOAD:
         case DONE:
         case SUBPROCESS:
+            break;
+        case VER_OLDER:
+            pdata->p_show_status(pdata->screen, status_older);
+            break;
+        case VER_SAME:
+            pdata->p_show_status(pdata->screen, status_same);
             break;
         default:
             break;

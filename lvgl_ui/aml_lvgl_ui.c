@@ -280,6 +280,9 @@ int swupdateui_run(int argc, char *argv[])
             /* Refresh the screen and waiting the animation finish before exit. */
             sem_wait(&sem_ui_finish);
             break;
+        } else if ((VER_OLDER == ref_ent.ui_status) || (VER_SAME == ref_ent.ui_status)) {
+            printf("A higher or same version image has installed, skipping...\n");
+            break;
         }
     }
 
