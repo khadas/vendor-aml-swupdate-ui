@@ -2,39 +2,44 @@
 CFLAGS += -g -O3
 
 OUT_DIR ?= $(CURDIR)
+$(info "OUT_DIR : $(OUT_DIR)")
 
-all: $(OUT_DIR)/swupdateui
+all: swupdateui
 
 ifeq ($(CONFIG_LVGL_APP), y)
 LDFLAGS += -llvgl -llv_drivers -lswupdate
-$(OUT_DIR)/swupdateui: $(OUT_DIR)/main.o $(OUT_DIR)/liblvgl_ui.a $(OUT_DIR)/liblvgl_porting.a $(OUT_DIR)/libcommon.a
-	$(CXX) $^ -lpthread $(LDFLAGS) -o $@
+LDFLAGS += -L $(OUT_DIR)/
 
-$(OUT_DIR)/liblvgl_ui.a:
-	$(MAKE) -C lvgl_ui OUTPUT=$(OUT_DIR)
+EXTRA_MAKE = "OUT_DIR=${OUT_DIR}"
 
-$(OUT_DIR)/liblvgl_porting.a:
-	$(MAKE) -C lvgl_porting OUTPUT=$(OUT_DIR)
+swupdateui: main.o liblvgl_ui.a liblvgl_porting.a libcommon.a
+	$(CXX) $(patsubst %, $(OUT_DIR)/%, $^) -lpthread $(LDFLAGS) -o $(OUT_DIR)/$@
+
+liblvgl_ui.a:
+	$(MAKE) $(EXTRA_MAKE) -C lvgl_ui
+
+liblvgl_porting.a:
+	$(MAKE) $(EXTRA_MAKE) -C lvgl_porting
 
 else
 LDFLAGS += $(shell $(PKG_CONFIG) --libs directfb) -l++dfb
-swupdateui: main.o directfb_ui/libdirectfb_ui.a common/libcommon.a
-	$(CXX) $^ -o $@ $(LDFLAGS) -lswupdate
+swupdateui: main.o libdirectfb_ui.a libcommon.a
+	$(CXX) $(patsubst %, $(OUT_DIR)/%, $^) -o $(OUT_DIR)/$@ $(LDFLAGS) -lswupdate
 
-directfb_ui/libdirectfb_ui.a:
-	$(MAKE) -C directfb_ui
+libdirectfb_ui.a:
+	$(MAKE) $(EXTRA_MAKE) -C directfb_ui
 
 endif
 
-$(OUT_DIR)/libcommon.a:
-	$(MAKE) -C common OUTPUT=$(OUT_DIR)
+libcommon.a:
+	$(MAKE) $(EXTRA_MAKE) -C common
 
-$(OUT_DIR)/main.o: main.cpp
-	$(CXX) $(CFLAGS) -O3 $(LDFLAGS) -c $< -o $@
+main.o: main.cpp
+	$(CXX) $(CFLAGS) -O3 $(LDFLAGS) -c $< -o $(OUT_DIR)/$@
 
 clean:
-	rm -f *.o swupdateui
-	$(MAKE) -C common clean
-	$(MAKE) -C lvgl_ui clean
-	$(MAKE) -C lvgl_porting clean
-	$(MAKE) -C directfb_ui clean
+	rm -f $(OUT_DIR)/*.o $(OUT_DIR)/*.a  $(OUT_DIR)/*.so $(OUT_DIR)/swupdateui
+	$(MAKE) $(EXTRA_MAKE) -C common clean
+	$(MAKE) $(EXTRA_MAKE) -C lvgl_ui clean
+	$(MAKE) $(EXTRA_MAKE) -C lvgl_porting clean
+	$(MAKE) $(EXTRA_MAKE) -C directfb_ui clean

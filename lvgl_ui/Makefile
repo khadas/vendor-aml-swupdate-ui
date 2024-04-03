@@ -1,12 +1,17 @@
 .PHONYH: clean
 
-all: $(OUTPUT)/liblvgl_ui.a
+$(info "OUT_DIR : $(OUT_DIR)")
 
-$(OUTPUT)/liblvgl_ui.a:$(OUTPUT)/aml_lvgl_ui.o
-	$(AR) -cvr $@ $^
+SRCS := $(wildcard *.c)
+OBJ := $(patsubst %.c, %.o, $(SRCS))
 
-$(OUTPUT)/aml_lvgl_ui.o:aml_lvgl_ui.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
+all: liblvgl_ui.a
+
+liblvgl_ui.a:$(OBJ)
+	$(AR) -cvr $(OUT_DIR)/$@ $(patsubst %, $(OUT_DIR)/%, $^)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $(OUT_DIR)/$@
 
 clean:
-	rm -rf *.o *.a
+	rm -rf $(OUT_DIR)/*.o $(OUT_DIR)/*.a

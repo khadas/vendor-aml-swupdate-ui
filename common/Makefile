@@ -3,14 +3,22 @@
 #
 .PHONYH: clean
 
-all: $(OUTPUT)/libcommon.a
+$(info "OUT_DIR : $(OUT_DIR)")
 
-$(OUTPUT)/libcommon.a:$(OUTPUT)/event_ui.o
-	$(AR) -cvr $@ $^
+SRCS := $(wildcard *.c)
+OBJ := $(patsubst %.c, %.o, $(SRCS))
 
-$(OUTPUT)/event_ui.o:event_ui.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
+all: libcommon.a
+
+libcommon.a:$(OBJ)
+	$(info "input : $(patsubst %, $(SUB_OUT_DIR)/%, $^)")
+	$(info "output : $(OUT_DIR)/$@")
+	$(AR) -cvr $(OUT_DIR)/$@ $(patsubst %, $(OUT_DIR)/%, $^)
+
+%.o: %.c
+	$(info "input : $^")
+	$(info "output : $(OUT_DIR)/$@")
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $(OUT_DIR)/$@
 
 clean:
-	rm -rf *.o *.a
-
+	rm -rf $(OUT_DIR)/*.o $(OUT_DIR)/*.a

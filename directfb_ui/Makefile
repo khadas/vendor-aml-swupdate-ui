@@ -1,15 +1,18 @@
 .PHONYH: clean
 
-OBJ=aml_directfb_ui.o dfbapp.o dfbimage.o
+$(info "OUT_DIR : $(OUT_DIR)")
+
+SRCS := $(wildcard *.cpp)
+OBJ := $(patsubst %.cpp, %.o, $(SRCS))
 
 CFLAGS_EXTRA += $(shell $(PKG_CONFIG) --cflags directfb)
 
 all: libdirectfb_ui.a
 libdirectfb_ui.a:$(OBJ)
-	$(AR) -cvr $@ $^
+	$(AR) -cvr $(OUT_DIR)/$@ $(patsubst %, $(OUT_DIR)/%, $^)
 
-$(OBJ):%.o:%.cpp
-	$(CXX) $(CFLAGS) $(CFLAGS_EXTRA) -c -O3 -g $^ -o $@
+%.o: %.cpp
+	$(CXX) $(CFLAGS) $(CFLAGS_EXTRA) -c -O3 -g $^ -o $(OUT_DIR)/$@
 
 clean:
-	rm -rf *.o *.a
+	rm -rf $(OUT_DIR)/*.o $(OUT_DIR)/*.a
